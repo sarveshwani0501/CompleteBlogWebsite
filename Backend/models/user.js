@@ -19,11 +19,11 @@ const userSchema = new mongoose.Schema(
     },
     profilePic: {
       type: String,
+      default: "",
     },
   },
   { timestamps: true }
 );
-
 
 // middleware to hash the password before saving in the database
 userSchema.pre("save", async function (next) {
