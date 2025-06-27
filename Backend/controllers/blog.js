@@ -1,6 +1,6 @@
 const Blog = require("../models/blog");
 const User = require("../models/user");
-
+const slug = require("slug");
 async function getAllBlogs(req, res) {
   try {
     const body = req.body;
@@ -29,7 +29,40 @@ async function getBlogbyId(req, res) {
   }
 }
 
+async function createBlog(req, res) {
+  try {
+    const { author, blogTitle, blogBody, tags, coverImage } = req.body;
+    if (!author) {
+      return res.status(400).json({ error: "User not logged in" });
+    }
+    if (!blogTitle || !blogBody) {
+      return res.status(400).json({ error: "Required fields not filled" });
+    }
+    const slugId = slug(blogTitle);
+    //
+    const singleBlog = {};
+    singleBlog.author = author;
+    singleBlog.title = blogTitle;
+    singleBlog.body = blogBody;
+    singleBlog.slug = slugId;
+
+    if (coverImage) {
+      singleBlog.coverImage = coverImage;
+    }
+    if (tags) {
+      singleBlog.tags = tags;
+    }
+    //
+    const blog = await Blog.create(singleBlog);
+
+    return res.status(201).json({ msg: "Blog created successfully", blog });
+  } catch (error) {
+    res.status(500).json({ error });
+  }
+}
+
 module.exports = {
   getAllBlogs,
   getBlogbyId,
+  createBlog,
 };
