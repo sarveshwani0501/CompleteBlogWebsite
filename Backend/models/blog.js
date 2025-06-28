@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-
+const slugify = require("slugify");
 const blogSchema = new mongoose.Schema(
   {
     title: {
@@ -9,7 +9,6 @@ const blogSchema = new mongoose.Schema(
     },
     slug: {
       type: String,
-      required: true,
       unique: true,
       trim: true,
     },
@@ -39,6 +38,13 @@ const blogSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+blogSchema.pre("save", function (next) {
+  if (this.isModified("title")) {
+    this.slug = slugify(this.title, { lower: true, strict: true });
+  }
+  next();
+});
 
 const Blog = mongoose.model("blog", blogSchema);
 

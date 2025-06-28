@@ -1,6 +1,6 @@
 const Blog = require("../models/blog");
 const User = require("../models/user");
-const slug = require("slug");
+const slugify = require("slugify");
 async function getAllBlogs(req, res) {
   try {
     const body = req.body;
@@ -14,8 +14,8 @@ async function getAllBlogs(req, res) {
 async function getBlogbyId(req, res) {
   try {
     const body = req.body;
-    const slug = req.params.slug;
-    const blog = await Blog.findOne({ slug: slug });
+    const slugId = req.params.slug;
+    const blog = await Blog.findOne({ slug: slugId });
 
     if (!blog) {
       return res.status(300).json({ msg: "Blog unavailable" });
@@ -32,19 +32,18 @@ async function getBlogbyId(req, res) {
 async function createBlog(req, res) {
   try {
     const { author, blogTitle, blogBody, tags, coverImage } = req.body;
+
     if (!author) {
       return res.status(400).json({ error: "User not logged in" });
     }
     if (!blogTitle || !blogBody) {
       return res.status(400).json({ error: "Required fields not filled" });
     }
-    const slugId = slug(blogTitle);
     //
     const singleBlog = {};
     singleBlog.author = author;
     singleBlog.title = blogTitle;
     singleBlog.body = blogBody;
-    singleBlog.slug = slugId;
 
     if (coverImage) {
       singleBlog.coverImage = coverImage;
@@ -52,6 +51,7 @@ async function createBlog(req, res) {
     if (tags) {
       singleBlog.tags = tags;
     }
+
     //
     const blog = await Blog.create(singleBlog);
 
@@ -61,8 +61,65 @@ async function createBlog(req, res) {
   }
 }
 
+async function deleteBlog(req, res) {
+  try {
+    const id = req.params.id;
+    if (!id) {
+      return res.status(400).json({ error: "No User id provided" });
+    }
+
+    await Blog.deleteOne({ _id: id });
+
+    return res.status(200).json({ msg: "Blog deleted successfully" });
+  } catch (error) {
+    return res.status(500).json({ error });
+  }
+}
+
+async function updateBlog(req, res) {
+  try {
+    const updates = req.body;
+    const id = req.params.id;
+    console.log(updates);
+    if (updates.title) {
+      updates.slug = slugify(updates.title, { lower: true, strict: true });
+    }
+    console.log(updates);
+    const updatedBlog = await Blog.findByIdAndUpdate(
+      { _id: id },
+      { $set: updates },
+      { new: true }
+    );
+
+    if (!updatedBlog) {
+      return res.status(400).json({ msg: "Blog not found" });
+    }
+
+    res.status(200).json(updatedBlog);
+  } catch (error) {
+    return res.status(500).json({ error });
+  }
+}
+
+async function getBlogsByUser(req, res) {
+  try {
+    const { userId } = req.params;
+    if (!userId) {
+      return res.status(400).json({ error: "UserId not present" });
+    }
+    const allBlogs = await Blog.find({ author: userId });
+
+    return res.status(200).json(allBlogs);
+  } catch (error) {
+    return res.status(500).json({ error });
+  }
+}
+
 module.exports = {
   getAllBlogs,
   getBlogbyId,
   createBlog,
+  deleteBlog,
+  updateBlog,
+  getBlogsByUser,
 };
