@@ -115,6 +115,27 @@ async function getBlogsByUser(req, res) {
   }
 }
 
+async function displayLikes(req, res) {
+  try {
+    const { id } = req.params;
+
+    if (!id) {
+      return res.status(400).json({ error: "Blog id missing" });
+    }
+
+    const blog = await Blog.findById(id);
+
+    const likes = blog.likes;
+
+    return res.status(200).json({ likes });
+  } catch (error) {
+    return res.status(500).json({ error });
+  }
+}
+
+
+
+
 module.exports = {
   getAllBlogs,
   getBlogbyId,
@@ -122,4 +143,5 @@ module.exports = {
   deleteBlog,
   updateBlog,
   getBlogsByUser,
+  displayLikes,
 };
