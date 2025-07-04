@@ -35,6 +35,24 @@ const blogSchema = new mongoose.Schema(
       ref: "User",
       default: [],
     },
+    comments: [
+      {
+        comment: {
+          type: String,
+          required: true,
+          trim: true,
+        },
+        commentor: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+          required: true,
+        },
+        commentedAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
   },
   { timestamps: true }
 );

@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const User = require("../models/user");
+const uploadToCloudinary = require("../utils/cloudinary");
 
 function generateToken(user) {
   const payload = {
@@ -72,8 +73,83 @@ async function logout(req, res) {
   return res.status(200).json({ message: "User log out successful" });
 }
 
+async function getUserDetails(req, res) {
+  try {
+    const { id } = req.params;
+    const user = await User.findById(id);
+
+    if (!user) {
+      return res.status(400).json({ error: "User Details not found" });
+    }
+    user.password = "";
+    return res.status(200).json({ msg: "Profile Information provided", user });
+  } catch (error) {
+    return res.status(500).json({
+      error: error,
+    });
+  }
+}
+
+async function updateUserProfile(req, res) {
+  try {
+    const { userName, oldPassword, newPassword, profilePic } = req.body;
+
+    const { id } = req.params;
+
+    const user = await User.findById(id);
+
+    if (oldPassword) {
+      const isMatch = await bcrypt.compare(oldPassword, user.password);
+      if (!isMatch) {
+        return res.status(400).json({ error: "Old Password does not match" });
+      }
+      user.password = newPassword;
+    }
+    if (userName) {
+      user.userName = userName;
+    }
+    if (profilePic) {
+      user.profilePic = profilePic;
+    }
+    await user.save();
+
+    return res.status(200).json({
+      msg: "Profile updated successfully",
+      user,
+    });
+  } catch (error) {
+    return res.status(400).json({ error });
+  }
+}
+
+async function updateProfilePic(req, res) {
+  try {
+    const userId = req.user.id;
+    const localPath = req.file?.path;
+
+    const result = await uploadToCloudinary(localPath, "user-profiles");
+    console.log(result);
+    if (!result) return res.status(400).json({ error: "Upload Failed" });
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { profilePic: result.secure_url },
+      { new: true }
+    );
+
+    res.status(200).json({
+      msg: "Profile picture uploaded",
+      profilePic: updatedUser.profilePic,
+    });
+  } catch (error) {
+    return res.status(500).json({ error });
+  }
+}
+
 module.exports = {
   signUp,
   login,
   logout,
+  getUserDetails,
+  updateUserProfile,
+  updateProfilePic,
 };
