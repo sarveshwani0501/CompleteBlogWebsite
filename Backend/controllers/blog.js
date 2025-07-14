@@ -13,7 +13,9 @@ async function getAllBlogs(req, res) {
     }
     const allBlogs = await Blog.find({ tags: { $in: tagList } });
 
-    return res.status(200).json({ msg: "Blog request success", allBlogs });
+    return res
+      .status(200)
+      .json({ msg: "Blog request success", blogs: allBlogs });
   } catch (err) {
     return res.status(500).json({ error: err });
   }
@@ -80,10 +82,10 @@ async function deleteBlog(req, res) {
     if (!id) {
       return res.status(400).json({ error: "No User id provided" });
     }
-
+    const blog = await Blog.findById(id);
     await Blog.deleteOne({ _id: id });
 
-    return res.status(200).json({ msg: "Blog deleted successfully" });
+    return res.status(200).json({ msg: "Blog deleted successfully", blog });
   } catch (error) {
     return res.status(500).json({ error });
   }
@@ -91,7 +93,7 @@ async function deleteBlog(req, res) {
 
 async function updateBlog(req, res) {
   try {
-    const {updates} = req.body;
+    const { updates } = req.body;
     const id = req.params.id;
     //console.log(updates);
     if (updates.title) {
@@ -117,7 +119,7 @@ async function updateBlog(req, res) {
       return res.status(400).json({ msg: "Blog not found" });
     }
 
-    return res.status(200).json(blog);
+    return res.status(200).json({ msg: "Blog updated successfully", blog });
   } catch (error) {
     return res.status(500).json({ error });
   }
@@ -131,7 +133,7 @@ async function getBlogsByUser(req, res) {
     }
     const allBlogs = await Blog.find({ author: userId });
 
-    return res.status(200).json(allBlogs);
+    return res.status(200).json({ msg: "User Blogs Sent", allBlogs });
   } catch (error) {
     return res.status(500).json({ error });
   }
@@ -167,7 +169,7 @@ async function toggleLikes(req, res) {
       return res.status(400).json({ error: "User not logged in" });
     }
     const blog = await Blog.findById(id);
-
+    
     if (!blog) {
       return res.status(400).json({ error: "Blog does not exist" });
     }
@@ -196,7 +198,7 @@ async function getComments(req, res) {
       { _id: id },
       { comments: 1 }
     ).populate("comments.commentor");
-    
+
     if (!blogComments) {
       return res.status(404).json({ msg: "Blog not found" });
     }
@@ -206,7 +208,7 @@ async function getComments(req, res) {
       blogComments,
     });
   } catch (error) {
-    console.error("Error while fetching blog comments: ", error)
+    console.error("Error while fetching blog comments: ", error);
     return res.status(400).json({ error });
   }
 }
