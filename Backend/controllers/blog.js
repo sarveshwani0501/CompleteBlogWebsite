@@ -8,10 +8,12 @@ async function getAllBlogs(req, res) {
     const { tags } = req.query;
     const tagList = tags ? tags.split(",") : [];
     if (tagList.length == 0) {
-      const blogs = await Blog.find({});
+      const blogs = await Blog.find({}).populate("author");
       return res.status(200).json({ msg: "Blog request success", blogs });
     }
-    const allBlogs = await Blog.find({ tags: { $in: tagList } });
+    const allBlogs = await Blog.find({ tags: { $in: tagList } }).populate(
+      "author"
+    );
 
     return res
       .status(200)
@@ -23,12 +25,15 @@ async function getAllBlogs(req, res) {
 
 async function getBlogbyId(req, res) {
   try {
-    const body = req.body;
-    const slugId = req.params.slug;
-    const blog = await Blog.findOne({ slug: slugId });
+    //const body = req.body;
+    const id = req.params.id;
+    console.log(id);
+    const blog = await Blog.findOne({ _id: id })
+      .populate("comments.commentor")
+      .populate("author");
 
     if (!blog) {
-      return res.status(300).json({ msg: "Blog unavailable" });
+      return res.status(404).json({ msg: "Blog unavailable" });
     }
     return res.status(200).json({
       msg: "Blog request success",
@@ -41,7 +46,10 @@ async function getBlogbyId(req, res) {
 
 async function createBlog(req, res) {
   try {
-    const { author, blogTitle, blogBody, tags, coverImage } = req.body;
+    const { author, blogTitle, blogBody } = req.body;
+    const tags = req.body.tags
+      ? req.body.tags.split(",").map((tag) => tag.trim())
+      : [];
 
     const localPath = req.file?.path;
 
@@ -91,34 +99,64 @@ async function deleteBlog(req, res) {
   }
 }
 
+async function getBlogBySlug(req, res) {
+  try {
+    console.log(123);
+    const { slug } = req.params;
+    console.log("Blog", slug);
+    const blog = await Blog.findOne({ slug: slug });
+    if (!blog) {
+      return res.status(404).json({ msg: "Blog not found" });
+    }
+    return res.status(200).json({ msg: "Blog Success", blog });
+  } catch (error) {
+    return res.status(500).json({ error });
+  }
+}
+
 async function updateBlog(req, res) {
   try {
-    const { updates } = req.body;
+    const updates = req.body;
     const id = req.params.id;
-    //console.log(updates);
-    if (updates.title) {
-      updates.slug = slugify(updates.title, { lower: true, strict: true });
+    console.log("Update blog: ", updates);
+    if (updates.blogTitle) {
+      updates.slug = slugify(updates.blogTitle, { lower: true, strict: true });
     }
-    //console.log(updates);
-    // const updatedBlog = await Blog.findByIdAndUpdate(
-    //   { _id: id },
-    //   { $set: updates },
-    //   { new: true }
-    // );
+    console.log(updates);
+    console.log(id);
+    const tags = updates.tags
+      ? updates.tags.split(",").map((tag) => tag.trim())
+      : [];
+    const localPath = req?.file?.path;
+    let result;
+    if (localPath) {
+      result = await uploadToCloudinary(localPath, "blog-covers");
+      if (!result) return res.status(400).json({ msg: "Image upload failed" });
+    }
+    // console.log(39534455);
     const blog = await Blog.findById(id);
     if (updates.blogBody) {
       blog.body = updates.blogBody;
     }
-    if (updates.title) {
-      blog.title = updates.title;
+    //console.log(39534455);
+    if (localPath) {
+      blog.coverImage = result.secure_url;
+    }
+    //console.log(39534455);
+    if (updates.blogTitle) {
+      blog.title = updates.blogTitle;
       blog.slug = updates.slug;
     }
+    if (tags) {
+      blog.tags = tags;
+    }
+    //console.log(39534455);
     await blog.save();
-    //console.log(blog);
+
     if (!blog) {
       return res.status(400).json({ msg: "Blog not found" });
     }
-
+    //console.log(39534455);
     return res.status(200).json({ msg: "Blog updated successfully", blog });
   } catch (error) {
     return res.status(500).json({ error });
@@ -165,11 +203,13 @@ async function toggleLikes(req, res) {
     if (!id) {
       return res.status(400).json({ error: "Blog id missing" });
     }
+    console.log(321);
     if (!userId) {
       return res.status(400).json({ error: "User not logged in" });
     }
+    console.log("rgvre");
     const blog = await Blog.findById(id);
-    
+
     if (!blog) {
       return res.status(400).json({ error: "Blog does not exist" });
     }
@@ -184,7 +224,7 @@ async function toggleLikes(req, res) {
 
     return res.status(200).json({
       msg: hasLiked ? "Unliked" : "Liked",
-      likesCount: blog.likes.length,
+      blog: blog,
     });
   } catch (error) {
     return res.status(500).json({ error });
@@ -255,4 +295,5 @@ module.exports = {
   toggleLikes,
   addComment,
   getComments,
+  getBlogBySlug,
 };

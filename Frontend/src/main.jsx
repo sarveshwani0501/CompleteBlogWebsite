@@ -9,9 +9,10 @@ import {
   Routes,
 } from "react-router-dom";
 import { Provider } from "react-redux";
-
+// import { PersistGate } from "redux-persist/integration/react";
+import ProtectedRoute from "./ProtectedRoute.jsx";
+import AppInitializer from "./AppInitializer.jsx";
 import store from "./App/store.js";
-
 import AllBlogs from "./components/Blogs.jsx";
 import Layout from "./components/Layout.jsx";
 import About from "./components/About.jsx";
@@ -19,29 +20,38 @@ import Contact from "./components/Contact.jsx";
 import UserProfile from "./components/UserProfile.jsx";
 import Blog from "./components/Blog.jsx";
 import UserBlogs from "./components/UserBlogs.jsx";
+import AuthWrapper from "./components/AuthForms.jsx";
 
 import "./index.css";
-import App from "./App.jsx";
+// import App from "./App.jsx";
 import CreateBlog from "./components/CreateBlog.jsx";
 
 const router = createBrowserRouter(
   createRoutesFromElements(
-    <Route path="/" element={<Layout />}>
-      <Route path="" element={<AllBlogs />} />
-      <Route path="about" element={<About />} />
-      <Route path="contact" element={<Contact />} />
-      <Route path="user/:id" element={<UserProfile />} />
-      <Route path="blog/:slug" element={<Blog />} />
-      <Route path="/:id/my-blogs" element={<UserBlogs />} />
-      <Route path="/create-blog" element={<CreateBlog />} />
-    </Route>
+    <>
+      <Route path="/" element={<Layout />}>
+        <Route path="" element={<AllBlogs />} />
+        <Route path="about" element={<About />} />
+        <Route path="contact" element={<Contact />} />
+        <Route element={<ProtectedRoute />}>
+          <Route path="user/:id" element={<UserProfile />} />
+          <Route path="blog/:slug" element={<Blog />} />
+          <Route path=":id/my-blogs" element={<UserBlogs />} />
+          <Route path="create-blog" element={<CreateBlog />} />
+          <Route path="blog/edit/:slug" element={<CreateBlog />} />
+        </Route>
+      </Route>
+      <Route path="/auth" element={<AuthWrapper />} />
+    </>
   )
 );
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <Provider store={store}>
-      <RouterProvider router={router} />
+      <AppInitializer>
+        <RouterProvider router={router} />
+      </AppInitializer>
     </Provider>
   </StrictMode>
 );

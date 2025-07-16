@@ -258,7 +258,7 @@
 //                 type="url"
 //                 value={formData.coverImage}
 //                 onChange={(e) =>
-//                   handleInputChange("coverImage", e.target.value)
+//                   handleInputChange("cover", e.target.value)
 //                 }
 //                 placeholder="https://example.com/image.jpg"
 //                 className="w-full px-4 py-3 pl-10 rounded-lg border border-gray-300 dark:border-slate-300 focus:border-blue-500 focus:ring-blue-500 focus:outline-none focus:ring-2 focus:ring-opacity-50 bg-white dark:bg-slate-100 text-gray-900 dark:text-slate-900 placeholder-gray-500 dark:placeholder-slate-500"
@@ -439,7 +439,17 @@
 
 import { useState, useRef } from "react";
 import MDEditor from "@uiw/react-md-editor";
+import MarkdownPreview from "@uiw/react-markdown-preview";
 import tags from "../utils/tags";
+import { useDispatch, useSelector } from "react-redux";
+import { useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+//import { selectUser } from "../features/authSlicer";
+import { createBlog, updateBlog, getAllBlogs } from "../features/blogSlicer";
+import { selectCurrentBlog } from "../features/blogSlicer";
+import { selectUser } from "../features/authSlicer";
+import { useEffect } from "react";
+import axios from "axios";
 // Mock tags array
 // const tags = [
 //   "JavaScript",
@@ -474,14 +484,76 @@ const icons = {
 };
 
 export default function CreateBlog() {
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const user = useSelector(selectUser);
+  const userId = user?._id;
+  const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
-    title: "",
-    body: "",
-    image: "",
+    blogTitle: "",
+    blogBody: "",
     tags: [],
-    author: { name: "Anonymous" },
+    author: userId,
+    _id: "",
   });
-  const [image, setImage] = useState();
+  useEffect(() => {
+    async function getAllBlog() {
+      await dispatch(getAllBlogs([]));
+    }
+    getAllBlog();
+  }, [dispatch]);
+
+  const { slug } = useParams();
+  let currBlog = useSelector(selectCurrentBlog);
+  const getBlogNow = async () => {
+    try {
+      console.log(slug);
+      const response = await axios.get(
+        `http://localhost:8000/api/blogs/slug/${slug}`,
+        {
+          withCredentials: true,
+        }
+      );
+      // console.log(response);
+      // console.log(response.data);
+      return response.data.blog;
+    } catch (error) {
+      const msg = error?.response?.data?.msg;
+      console.log(msg);
+    }
+  };
+  useEffect(() => {
+    const fetchAndPopulate = async () => {
+      if (slug) {
+        try {
+          const response = await axios.get(
+            `http://localhost:8000/api/blogs/slug/${slug}`,
+            { withCredentials: true }
+          );
+          const blog = response.data.blog;
+          currBlog = blog;
+          console.log("Fetched blog", blog);
+
+          setFormData({
+            blogTitle: blog.title,
+            blogBody: blog.body,
+            tags: blog.tags,
+            author: blog.author,
+            _id: blog._id,
+          });
+          setIsEditing(true);
+        } catch (error) {
+          const msg = error?.response?.data?.msg || error.message;
+          console.error("Failed to fetch blog:", msg);
+        }
+      }
+    };
+    fetchAndPopulate();
+
+    // console.log(currBlog);
+  }, [slug, currBlog]);
+
+  const [file, setFile] = useState(null);
   const [tagInput, setTagInput] = useState("");
   const [showTagSuggestions, setShowTagSuggestions] = useState(false);
   const [errors, setErrors] = useState({});
@@ -489,10 +561,10 @@ export default function CreateBlog() {
 
   const tagInputRef = useRef(null);
 
-  const filteredTags = tags.filter(
+  const filteredTags = tags?.filter(
     (tag) =>
       tag.toLowerCase().includes(tagInput.toLowerCase()) &&
-      !formData.tags.includes(tag)
+      !formData?.tags?.includes(tag)
   );
 
   const handleInputChange = (field, value) => {
@@ -544,13 +616,13 @@ export default function CreateBlog() {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.title.trim()) {
+    if (!formData.blogTitle.trim()) {
       newErrors.title = "Title is required";
-    } else if (formData.title.length < 5) {
+    } else if (formData.blogTitle.length < 5) {
       newErrors.title = "Title must be at least 5 characters";
     }
 
-    if (!formData.body.trim()) {
+    if (!formData.blogBody.trim()) {
       newErrors.body = "Blog content is required";
     }
 
@@ -562,21 +634,46 @@ export default function CreateBlog() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     if (!validateForm()) return;
 
     setIsSubmitting(true);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // await new Promise((resolve) => setTimeout(resolve, 1000));
+      console.log(formData);
+      const newFormData = new FormData();
+      newFormData.append("blogTitle", formData.blogTitle);
+      newFormData.append("blogBody", formData.blogBody);
+      newFormData.append("author", formData.author);
+      newFormData.append("tags", formData.tags.join(","));
+      if (file) newFormData.append("image", file);
 
-      setFormData({
-        title: "",
-        body: "",
-        coverImage: "",
-        tags: [],
-        author: { name: "Anonymous" },
-      });
+      if (isEditing) {
+        newFormData.append("_id", formData._id);
+        await dispatch(updateBlog(newFormData)).unwrap();
+        setFormData({
+          title: "",
+          body: "",
+          coverImage: "",
+          tags: [],
+          author: "",
+          _id: "",
+        });
+        navigate(`/${userId}/my-blogs`);
+      } else {
+        await dispatch(createBlog(newFormData)).unwrap();
+        // setFormData({
+        //   title: "",
+        //   body: "",
+        //   coverImage: "",
+        //   tags: [],
+        //   author: "",
+        //   _id: "",
+        // });
+        navigate("/");
+      }
 
       alert("Blog created successfully!");
     } catch (error) {
@@ -587,7 +684,7 @@ export default function CreateBlog() {
     }
   };
 
-  const titleCharCount = formData.title.length;
+  const titleCharCount = formData.blogTitle.length;
   const maxTitleLength = 100;
 
   return (
@@ -606,6 +703,12 @@ export default function CreateBlog() {
               <p className="text-muted-foreground">
                 Share your thoughts and ideas with the community
               </p>
+              <div>
+                <MarkdownPreview
+                  source={formData.blogBody}
+                  style={{ background: "white", color: "black" }}
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -620,8 +723,8 @@ export default function CreateBlog() {
             <div className="relative">
               <input
                 type="text"
-                value={formData.title}
-                onChange={(e) => handleInputChange("title", e.target.value)}
+                value={formData.blogTitle}
+                onChange={(e) => handleInputChange("blogTitle", e.target.value)}
                 placeholder="Enter your blog title..."
                 maxLength={maxTitleLength}
                 className={`w-full px-4 py-3 rounded-lg border ${
@@ -682,7 +785,7 @@ export default function CreateBlog() {
               <input
                 type="file"
                 accept="image/*"
-                onChange={(e) => handleInputChange("image", e.target.files[0])}
+                onChange={(e) => setFile(e.target.files[0])}
                 className="w-full px-4 py-3 pl-10 rounded-lg border border-border focus:border-primary focus:ring-primary focus:outline-none focus:ring-2 focus:ring-opacity-50 bg-background text-foreground placeholder-muted-foreground"
               />
               <span className="absolute left-3 top-3.5 text-muted-foreground">
@@ -783,8 +886,8 @@ export default function CreateBlog() {
               data-color-mode="light"
             >
               <MDEditor
-                value={formData.body}
-                onChange={(value) => handleInputChange("body", value || "")}
+                value={formData.blogBody}
+                onChange={(value) => handleInputChange("blogBody", value || "")}
                 preview="edit"
                 height={400}
                 data-color-mode="light"

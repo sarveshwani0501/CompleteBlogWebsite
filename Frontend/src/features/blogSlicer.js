@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
-
+axios.defaults.withCredentials = true;
 const API_URL = "http://localhost:8000/api";
 
 export const getAllBlogs = createAsyncThunk(
@@ -37,7 +37,7 @@ export const deleteBlog = createAsyncThunk(
   "blogs/delete",
   async (blogId, { rejectWithValue }) => {
     try {
-      const response = await axios.delete(`${API_URL}/blogs/${blogId}`);
+      const response = await axios.delete(`${API_URL}/blogs/id/${blogId}`);
       return response.data.blog;
     } catch (error) {
       return rejectWithValue("Blog delete failed");
@@ -49,11 +49,14 @@ export const getBlogById = createAsyncThunk(
   "blogs/id",
   async (blogId, { rejectWithValue }) => {
     try {
-      const response = await axios.get(`${API_URL}/blogs/${blogId}`);
-
+      console.log("defef");
+      const response = await axios.get(`${API_URL}/blogs/id/${blogId}`);
       return response.data.blog;
     } catch (error) {
-      return rejectWithValue("Retrieval of blog failed");
+      console.error("Thunk error:", error);
+      const message = error?.response?.data?.msg;
+      //console.log(message);
+      return rejectWithValue(message);
     }
   }
 );
@@ -62,13 +65,20 @@ export const updateBlog = createAsyncThunk(
   "blog/update",
   async (updatedBlog, { rejectWithValue }) => {
     try {
+      const blogId = updatedBlog.get("_id");
+      console.log(blogId);
       const response = await axios.put(
-        `${API_URL}/blogs/${updatedBlog._id}`,
-        updatedBlog
+        `${API_URL}/blogs/id/${blogId}`,
+        updatedBlog,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        }
       );
       return response.data.blog;
     } catch (error) {
-      return rejectWithValue("Failed to update blog");
+      const message = error?.response?.data?.msg;
+      //console.log(message);
+      return rejectWithValue(message);
     }
   }
 );
@@ -78,7 +88,7 @@ export const addComment = createAsyncThunk(
   async (commentBody, { rejectWithValue }) => {
     try {
       const response = await axios.post(
-        `${API_URL}/blogs/${commentBody.id}/comments`,
+        `${API_URL}/blogs/comments/${commentBody._id}`,
         commentBody
       );
       return response.data.blog;
@@ -93,13 +103,13 @@ export const toggleLikes = createAsyncThunk(
   async (blog, { rejectWithValue }) => {
     try {
       const response = await axios.post(
-        `${API_URL}/blogs/${blog._id}/comments`,
+        `${API_URL}/blogs/likes/${blog._id}`,
         blog
       );
-
       return response.data.blog;
     } catch (error) {
-      return rejectWithValue("Failed to like the blog");
+      const message = error?.response?.data?.msg;
+      return rejectWithValue(message);
     }
   }
 );
@@ -158,6 +168,7 @@ const blogSlice = createSlice({
       .addCase(createBlog.fulfilled, (state, action) => {
         state.status = "fulfilled";
         state.loading = false;
+        console.log("Dispatching actions", action);
         state.allBlogs.push(action.payload);
         //state.userBlogs.push(action.payload);
         state.recentBlogs = [action.payload, ...state.recentBlogs].slice(0, 4);
@@ -165,6 +176,7 @@ const blogSlice = createSlice({
       .addCase(createBlog.rejected, (state, action) => {
         state.status = "rejected";
         state.loading = false;
+        console.log("Dispatching actions", action);
         state.error = action.payload;
       })
       .addCase(deleteBlog.pending, (state) => {
@@ -186,6 +198,8 @@ const blogSlice = createSlice({
       })
       .addCase(getBlogById.fulfilled, (state, action) => {
         state.blog = action.payload;
+        state.status = "fulfilled";
+        state.loading = false;
       })
       .addCase(getBlogById.pending, (state) => {
         state.status = "pending";
@@ -195,6 +209,7 @@ const blogSlice = createSlice({
       .addCase(getBlogById.rejected, (state, action) => {
         state.status = "rejected";
         state.loading = false;
+        console.log(state.blog);
         state.error = action.payload;
       })
       .addCase(updateBlog.fulfilled, (state, action) => {
@@ -234,6 +249,7 @@ const blogSlice = createSlice({
       .addCase(toggleLikes.fulfilled, (state, action) => {
         state.status = "fulfilled";
         state.blog = action.payload;
+        console.log(action.payload);
         updateBlogInArray(state.allBlogs, action.payload);
         updateBlogInArray(state.recentBlogs, action.payload);
       })
@@ -246,7 +262,7 @@ const blogSlice = createSlice({
         state.status = "rejected";
         state.loading = false;
         state.error = action.payload;
-      })
+      });
   },
 });
 

@@ -1,16 +1,17 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 
-const API_URL = "http://localhost:5000/api";
-
+const API_URL = "http://localhost:8000/api";
+axios.defaults.withCredentials = true;
 export const registerUser = createAsyncThunk(
   "user/register",
   async (userData, { rejectWithValue }) => {
     try {
       const response = await axios.post(`${API_URL}/auth/signup`, userData);
-      return response.data;
+      return response.data.user;
     } catch (error) {
-      return rejectWithValue("Registration failed");
+      const message = error.response?.data?.message || "User login failed";
+      return rejectWithValue(message);
     }
   }
 );
@@ -22,7 +23,8 @@ export const loginUser = createAsyncThunk(
       const response = await axios.post(`${API_URL}/auth/login`, userData);
       return response.data;
     } catch (error) {
-      return rejectWithValue("User login failed");
+      const message = error.response?.data?.message || "User login failed";
+      return rejectWithValue(message);
     }
   }
 );
@@ -51,7 +53,12 @@ const initialState = {
 const authSlice = createSlice({
   name: "auth",
   initialState,
-
+  reducers: {
+    setUser: (state, action) => {
+      state.user = action.payload;
+      if (state.user) state.isAuthenticated = true;
+    },
+  },
   extraReducers(builder) {
     builder
       .addCase(registerUser.pending, (state) => {
@@ -61,6 +68,7 @@ const authSlice = createSlice({
       })
       .addCase(registerUser.fulfilled, (state) => {
         state.status = "fulfilled";
+        // console.log(action.payload);
         state.loading = false;
         state.error = null;
       })
@@ -75,6 +83,7 @@ const authSlice = createSlice({
         state.error = null;
       })
       .addCase(loginUser.fulfilled, (state, action) => {
+        console.log(action.payload);
         state.status = "fulfilled";
         state.loading = false;
         state.error = null;
@@ -105,7 +114,7 @@ const authSlice = createSlice({
         state.status = "rejected";
         state.error = action.payload.error || "Logout failed";
         state.loading = false;
-        state.isAuthenticated = false;
+        state.isAuthenticated = true;
       });
   },
 });
@@ -114,5 +123,5 @@ export const selectisAuthenticated = (state) => state.auth.isAuthenticated;
 export const selectUser = (state) => state.auth.user;
 export const selectAuthError = (state) => state.auth.error;
 export const selectToken = (state) => state.auth.token;
-
+export const { setUser } = authSlice.actions;
 export default authSlice.reducer;

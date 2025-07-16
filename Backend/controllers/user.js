@@ -44,6 +44,8 @@ async function signUp(req, res) {
   }
 }
 
+const ONE_DAY = 24 * 60 * 60 * 1000;
+
 async function login(req, res) {
   const { userName, password } = req.body;
 
@@ -59,12 +61,18 @@ async function login(req, res) {
   }
 
   const token = generateToken(user);
-
-  res.cookie("token", token);
-
+  console.log("Cookie in token ", token);
+  res.cookie("token", token, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: false,
+    maxAge: ONE_DAY,
+  });
+  
   return res.status(200).json({
     message: "User login successful",
     user: user,
+    token,
   });
 }
 

@@ -1,18 +1,45 @@
 import React, { useState } from "react";
-import { NavLink } from "react-router-dom";
+import { href, NavLink } from "react-router-dom";
 import { BookOpen, Menu, X } from "lucide-react";
-
+import { selectisAuthenticated } from "../features/authSlicer";
+import { useSelector } from "react-redux";
 export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
+  const isAuthenticated = useSelector(selectisAuthenticated);
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
 
-  const navLinks = [
+  let navLinks = [
     { name: "Blogs", href: "/" },
     { name: "About", href: "/about" },
     { name: "Contact", href: "/contact" },
+  ];
+  if (!isAuthenticated) {
+    navLinks = navLinks.filter(
+      (link) =>
+        link.name !== "My Blogs" &&
+        link.name !== "Profile" &&
+        link.name !== "Write Blog"
+    );
+    navLinks = [
+      ...navLinks,
+      { name: "Login", href: "/auth?form=login" },
+      { name: "Sign up", href: "/auth?form=signup" },
+    ];
+  }
+  if (isAuthenticated) {
+    navLinks = navLinks.filter(
+      (link) => link.name !== "Login" && link.name !== "Sign up"
+    );
+    navLinks.push({ name: "My Blogs", href: "/my-blogs" });
+    navLinks.push({ name: "Profile", href: "/my-profile" });
+    navLinks.push({ name: "Write Blog", href: "/create-blog" });
+  }
+
+  const protectedLinks = [
+    { name: "My Blogs", href: "" },
+    { name: "Profile", href: "" },
   ];
 
   return (
@@ -73,7 +100,7 @@ export default function Header() {
         <div
           className={`md:hidden transition-all duration-300 ease-in-out ${
             isMobileMenuOpen
-              ? "max-h-60 opacity-100 pb-4"
+              ? "max-h-80 opacity-100 pb-4"
               : "max-h-0 opacity-0 overflow-hidden"
           }`}
         >

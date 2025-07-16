@@ -4,7 +4,7 @@ const jwt = require("jsonwebtoken");
 async function verifyAuth(req, res, next) {
   try {
     const token = req.cookies.token;
-
+    console.log("Token in verifyAuth: ", token);
     if (!token) {
       return res.status(401).json({
         error: "Token not found",
@@ -23,14 +23,7 @@ async function verifyAuth(req, res, next) {
       });
     }
 
-    const userData = {
-      id: user._id,
-      userName: user.userName,
-      email: user.email,
-      profilePic: user.profilePic,
-    };
-
-    req.user = userData;
+    req.user = user;
 
     next();
   } catch (error) {
