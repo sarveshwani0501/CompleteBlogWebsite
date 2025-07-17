@@ -104,7 +104,9 @@ async function getBlogBySlug(req, res) {
     console.log(123);
     const { slug } = req.params;
     console.log("Blog", slug);
-    const blog = await Blog.findOne({ slug: slug });
+    const blog = await Blog.findOne({ slug: slug }).populate(
+      "comments.commentor"
+    );
     if (!blog) {
       return res.status(404).json({ msg: "Blog not found" });
     }
@@ -269,12 +271,12 @@ async function addComment(req, res) {
       comment: content,
       commentor: userId,
     };
-    const blog = await Blog.findById(id);
+    const blog = await Blog.findById(id).populate("comments.commentor");
 
     blog.comments.push(completeComment);
 
     await blog.save();
-
+    console.log(blog);
     return res.status(201).json({
       msg: "Comment added",
       blog,

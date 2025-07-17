@@ -17,7 +17,7 @@ router.post("/login", login);
 router.get("/logout", logout);
 
 router.get("/me", verifyAuth, (req, res) => {
-  console.log(req.user);
+  //console.log(req.user);
   res.status(200).json({
     msg: "User authenticated",
     user: req.user,

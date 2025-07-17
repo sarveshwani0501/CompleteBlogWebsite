@@ -68,7 +68,7 @@ async function login(req, res) {
     secure: false,
     maxAge: ONE_DAY,
   });
-  
+
   return res.status(200).json({
     message: "User login successful",
     user: user,
@@ -132,11 +132,14 @@ async function updateUserProfile(req, res) {
 
 async function updateProfilePic(req, res) {
   try {
-    const userId = req.user.id;
+    const user = JSON.parse(req.body.user);
+    const userId = user._id;
     const localPath = req.file?.path;
-
+    console.log(userId);
+    //console.log(req.body);
+    console.log(localPath);
     const result = await uploadToCloudinary(localPath, "user-profiles");
-    console.log(result);
+    //console.log(result);
     if (!result) return res.status(400).json({ error: "Upload Failed" });
     const updatedUser = await User.findByIdAndUpdate(
       userId,

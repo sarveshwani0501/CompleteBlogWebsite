@@ -437,6 +437,998 @@
 //   );
 // }
 
+
+
+
+
+
+
+
+
+
+// import { useState, useRef } from "react";
+// import MDEditor from "@uiw/react-md-editor";
+// import MarkdownPreview from "@uiw/react-markdown-preview";
+// import tags from "../utils/tags";
+// import { useDispatch, useSelector } from "react-redux";
+// import { useParams } from "react-router-dom";
+// import { useNavigate } from "react-router-dom";
+// //import { selectUser } from "../features/authSlicer";
+// import { createBlog, updateBlog, getAllBlogs } from "../features/blogSlicer";
+// import { selectCurrentBlog } from "../features/blogSlicer";
+// import { selectUser } from "../features/authSlicer";
+// import { useEffect } from "react";
+// import axios from "axios";
+// // Mock tags array
+// // const tags = [
+// //   "JavaScript",
+// //   "React",
+// //   "Node.js",
+// //   "Python",
+// //   "Web Development",
+// //   "Frontend",
+// //   "Backend",
+// //   "Database",
+// //   "API",
+// //   "CSS",
+// //   "HTML",
+// //   "Tutorial",
+// //   "Guide",
+// //   "Tips",
+// //   "Best Practices",
+// //   "Performance",
+// // ];
+
+// // Icons (fallback symbols instead of lucide-react)
+// const icons = {
+//   Save: "💾",
+//   Eye: "👁️",
+//   Image: "🖼️",
+//   Tag: "🏷️",
+//   X: "✕",
+//   Plus: "+",
+//   Check: "✓",
+//   AlertCircle: "⚠️",
+//   ArrowLeft: "←",
+// };
+
+// export default function CreateBlog() {
+//   const navigate = useNavigate();
+//   const dispatch = useDispatch();
+//   const user = useSelector(selectUser);
+//   const userId = user?._id;
+//   const [isEditing, setIsEditing] = useState(false);
+//   const [formData, setFormData] = useState({
+//     blogTitle: "",
+//     blogBody: "",
+//     tags: [],
+//     author: userId,
+//     _id: "",
+//   });
+//   useEffect(() => {
+//     async function getAllBlog() {
+//       await dispatch(getAllBlogs([]));
+//     }
+//     getAllBlog();
+//   }, [dispatch]);
+
+//   const { slug } = useParams();
+//   let currBlog = useSelector(selectCurrentBlog);
+//   const getBlogNow = async () => {
+//     try {
+//       console.log(slug);
+//       const response = await axios.get(
+//         `http://localhost:8000/api/blogs/slug/${slug}`,
+//         {
+//           withCredentials: true,
+//         }
+//       );
+//       // console.log(response);
+//       // console.log(response.data);
+//       return response.data.blog;
+//     } catch (error) {
+//       const msg = error?.response?.data?.msg;
+//       console.log(msg);
+//     }
+//   };
+//   useEffect(() => {
+//     const fetchAndPopulate = async () => {
+//       if (slug) {
+//         try {
+//           const response = await axios.get(
+//             `http://localhost:8000/api/blogs/slug/${slug}`,
+//             { withCredentials: true }
+//           );
+//           const blog = response.data.blog;
+//           currBlog = blog;
+//           console.log("Fetched blog", blog);
+
+//           setFormData({
+//             blogTitle: blog.title,
+//             blogBody: blog.body,
+//             tags: blog.tags,
+//             author: blog.author,
+//             _id: blog._id,
+//           });
+//           setIsEditing(true);
+//         } catch (error) {
+//           const msg = error?.response?.data?.msg || error.message;
+//           console.error("Failed to fetch blog:", msg);
+//         }
+//       }
+//     };
+//     fetchAndPopulate();
+
+//     // console.log(currBlog);
+//   }, [slug, currBlog]);
+
+//   const [file, setFile] = useState(null);
+//   const [tagInput, setTagInput] = useState("");
+//   const [showTagSuggestions, setShowTagSuggestions] = useState(false);
+//   const [errors, setErrors] = useState({});
+//   const [isSubmitting, setIsSubmitting] = useState(false);
+
+//   const tagInputRef = useRef(null);
+
+//   const filteredTags = tags?.filter(
+//     (tag) =>
+//       tag.toLowerCase().includes(tagInput.toLowerCase()) &&
+//       !formData?.tags?.includes(tag)
+//   );
+
+//   const handleInputChange = (field, value) => {
+//     setFormData((prev) => ({
+//       ...prev,
+//       [field]: value,
+//     }));
+
+//     if (errors[field]) {
+//       setErrors((prev) => {
+//         const updatedErrors = { ...prev };
+//         delete updatedErrors[field];
+//         return updatedErrors;
+//       });
+//     }
+//   };
+
+//   const addTag = (tag) => {
+//     if (tag && !formData.tags.includes(tag) && formData.tags.length < 5) {
+//       setFormData((prev) => ({
+//         ...prev,
+//         tags: [...prev.tags, tag],
+//       }));
+//       setTagInput("");
+//       setShowTagSuggestions(false);
+//     }
+//   };
+
+//   const removeTag = (tagToRemove) => {
+//     setFormData((prev) => ({
+//       ...prev,
+//       tags: prev.tags.filter((tag) => tag !== tagToRemove),
+//     }));
+//   };
+
+//   const handleTagInput = (e) => {
+//     const value = e.target.value;
+//     setTagInput(value);
+//     setShowTagSuggestions(value.length > 0);
+
+//     if (e.key === "Enter" || e.key === ",") {
+//       e.preventDefault();
+//       if (value.trim()) {
+//         addTag(value.trim());
+//       }
+//     }
+//   };
+
+//   const validateForm = () => {
+//     const newErrors = {};
+
+//     if (!formData.blogTitle.trim()) {
+//       newErrors.title = "Title is required";
+//     } else if (formData.blogTitle.length < 5) {
+//       newErrors.title = "Title must be at least 5 characters";
+//     }
+
+//     if (!formData.blogBody.trim()) {
+//       newErrors.body = "Blog content is required";
+//     }
+
+//     if (formData.tags.length === 0) {
+//       newErrors.tags = "At least one tag is required";
+//     }
+
+//     setErrors(newErrors);
+//     return Object.keys(newErrors).length === 0;
+//   };
+
+//   const handleSubmit = async (e) => {
+//     e.preventDefault();
+//     if (!validateForm()) return;
+
+//     setIsSubmitting(true);
+
+//     try {
+//       // await new Promise((resolve) => setTimeout(resolve, 1000));
+//       console.log(formData);
+//       const newFormData = new FormData();
+//       newFormData.append("blogTitle", formData.blogTitle);
+//       newFormData.append("blogBody", formData.blogBody);
+//       newFormData.append("author", formData.author);
+//       newFormData.append("tags", formData.tags.join(","));
+//       if (file) newFormData.append("image", file);
+
+//       if (isEditing) {
+//         newFormData.append("_id", formData._id);
+//         await dispatch(updateBlog(newFormData)).unwrap();
+//         setFormData({
+//           title: "",
+//           body: "",
+//           coverImage: "",
+//           tags: [],
+//           author: "",
+//           _id: "",
+//         });
+//         navigate(`/${userId}/my-blogs`);
+//       } else {
+//         await dispatch(createBlog(newFormData)).unwrap();
+//         // setFormData({
+//         //   title: "",
+//         //   body: "",
+//         //   coverImage: "",
+//         //   tags: [],
+//         //   author: "",
+//         //   _id: "",
+//         // });
+//         navigate("/");
+//       }
+
+//       alert("Blog created successfully!");
+//     } catch (error) {
+//       console.error("Error creating blog:", error);
+//       setErrors({ submit: "Failed to create blog. Please try again." });
+//     } finally {
+//       setIsSubmitting(false);
+//     }
+//   };
+
+//   const titleCharCount = formData.blogTitle.length;
+//   const maxTitleLength = 100;
+
+//   return (
+//     <div className="min-h-screen bg-background">
+//       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+//         {/* Header */}
+//         <div className="flex items-center justify-between mb-8">
+//           <div className="flex items-center space-x-4">
+//             <button className="p-2 hover:bg-accent rounded-full transition-colors">
+//               <span className="text-lg">{icons.ArrowLeft}</span>
+//             </button>
+//             <div>
+//               <h1 className="text-2xl font-bold text-foreground">
+//                 {isEditing ? "Edit Blog" : "Create New Blog"}
+//               </h1>
+//               <p className="text-muted-foreground">
+//                 Share your thoughts and ideas with the community
+//               </p>
+//             </div>
+//           </div>
+//         </div>
+
+//         {/* Form */}
+//         <form onSubmit={handleSubmit} className="space-y-6">
+//           {/* Title Input */}
+//           <div>
+//             <label className="block text-sm font-medium text-foreground mb-2">
+//               Blog Title *
+//             </label>
+//             <div className="relative">
+//               <input
+//                 type="text"
+//                 value={formData.blogTitle}
+//                 onChange={(e) => handleInputChange("blogTitle", e.target.value)}
+//                 placeholder="Enter your blog title..."
+//                 maxLength={maxTitleLength}
+//                 className={`w-full px-4 py-3 rounded-lg border ${
+//                   errors.title
+//                     ? "border-destructive focus:border-destructive focus:ring-destructive"
+//                     : "border-border focus:border-primary focus:ring-primary"
+//                 } focus:outline-none focus:ring-2 focus:ring-opacity-50 bg-background text-foreground placeholder-muted-foreground`}
+//               />
+//               <div className="absolute right-3 top-3 text-xs text-muted-foreground">
+//                 {titleCharCount}/{maxTitleLength}
+//               </div>
+//             </div>
+//             {errors.title && (
+//               <p className="mt-1 text-sm text-destructive flex items-center">
+//                 <span className="mr-1">{icons.AlertCircle}</span>
+//                 {errors.title}
+//               </p>
+//             )}
+//           </div>
+
+//           {/* Cover Image Input */}
+//           {/* <div>
+//             <label className="block text-sm font-medium text-foreground mb-2">
+//               Cover Image URL (Optional)
+//             </label>
+//             <div className="relative">
+//               <input
+//                 type="url"
+//                 value={formData.coverImage}
+//                 onChange={(e) =>
+//                   handleInputChange("coverImage", e.target.value)
+//                 }
+//                 placeholder="https://example.com/image.jpg"
+//                 className="w-full px-4 py-3 pl-10 rounded-lg border border-border focus:border-primary focus:ring-primary focus:outline-none focus:ring-2 focus:ring-opacity-50 bg-background text-foreground placeholder-muted-foreground"
+//               />
+//               <span className="absolute left-3 top-3.5 text-muted-foreground">
+//                 {icons.Image}
+//               </span>
+//             </div>
+//             {formData.coverImage && (
+//               <div className="mt-2">
+//                 <img
+//                   src={formData.coverImage}
+//                   alt="Cover preview"
+//                   className="h-full w-full object-cover rounded-lg"
+//                   onError={(e) => {
+//                     e.target.style.display = "none";
+//                   }}
+//                 />
+//               </div>
+//             )}
+//           </div> */}
+//           <div>
+//             <label className="block text-sm font-medium text-foreground mb-2">
+//               Upload Cover Image
+//             </label>
+//             <div className="relative">
+//               <input
+//                 type="file"
+//                 accept="image/*"
+//                 onChange={(e) => setFile(e.target.files[0])}
+//                 className="w-full px-4 py-3 pl-10 rounded-lg border border-border focus:border-primary focus:ring-primary focus:outline-none focus:ring-2 focus:ring-opacity-50 bg-background text-foreground placeholder-muted-foreground"
+//               />
+//               <span className="absolute left-3 top-3.5 text-muted-foreground">
+//                 {icons.Image}
+//               </span>
+//             </div>
+//           </div>
+
+//           {/* Tags Input */}
+//           <div>
+//             <label className="block text-sm font-medium text-foreground mb-2">
+//               Tags * (Max 5)
+//             </label>
+
+//             {/* Selected Tags */}
+//             {formData.tags.length > 0 && (
+//               <div className="flex flex-wrap gap-2 mb-3">
+//                 {formData.tags.map((tag) => (
+//                   <span
+//                     key={tag}
+//                     className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-200 text-primary"
+//                   >
+//                     {tag}
+//                     <button
+//                       type="button"
+//                       onClick={() => removeTag(tag)}
+//                       className="ml-2 h-4 w-4 rounded-full hover:bg-gray-100 transition-colors flex items-center justify-center"
+//                     >
+//                       <span className="text-xs">{icons.X}</span>
+//                     </button>
+//                   </span>
+//                 ))}
+//               </div>
+//             )}
+
+//             {/* Tag Input */}
+//             <div className="relative z-40">
+//               <input
+//                 ref={tagInputRef}
+//                 type="text"
+//                 value={tagInput}
+//                 onChange={(e) => setTagInput(e.target.value)}
+//                 onKeyDown={handleTagInput}
+//                 onFocus={() => setShowTagSuggestions(tagInput.length > 0)}
+//                 placeholder="Type to search tags or add custom tags..."
+//                 disabled={formData.tags.length >= 5}
+//                 className={`w-full px-4 py-3 pl-10 rounded-lg border ${
+//                   errors.tags
+//                     ? "border-destructive focus:border-destructive focus:ring-destructive"
+//                     : "border-border focus:border-primary focus:ring-primary"
+//                 } focus:outline-none focus:ring-2 focus:ring-opacity-50 bg-background text-foreground placeholder-muted-foreground disabled:bg-muted disabled:cursor-not-allowed`}
+//               />
+//               <span className="absolute left-3 top-3.5 text-muted-foreground">
+//                 {icons.Tag}
+//               </span>
+
+//               {/* Tag Suggestions */}
+//               {showTagSuggestions && filteredTags.length > 0 && (
+//                 <div className="absolute z-40 w-full mt-1 bg-white border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
+//                   {filteredTags.slice(0, 10).map((tag) => (
+//                     <button
+//                       key={tag}
+//                       type="button"
+//                       onClick={() => addTag(tag)}
+//                       className="w-full px-4 py-2 text-left hover:bg-accent transition-colors flex items-center justify-between"
+//                     >
+//                       <span className="text-foreground">{tag}</span>
+//                       <span className="text-muted-foreground">
+//                         {icons.Plus}
+//                       </span>
+//                     </button>
+//                   ))}
+//                 </div>
+//               )}
+//             </div>
+
+//             {errors.tags && (
+//               <p className="mt-1 text-sm text-destructive flex items-center">
+//                 <span className="mr-1">{icons.AlertCircle}</span>
+//                 {errors.tags}
+//               </p>
+//             )}
+
+//             <p className="mt-1 text-sm text-muted-foreground">
+//               Press Enter or comma to add tags. Choose from suggested tags or
+//               create custom ones.
+//             </p>
+//           </div>
+
+//           {/* Content Editor */}
+//           <div>
+//             <label className="block text-sm font-medium text-foreground mb-2">
+//               Blog Content *
+//             </label>
+
+//             <div
+//               className="rounded-lg overflow-hidden border border-border"
+//               data-color-mode="light"
+//             >
+//               <MDEditor
+//                 value={formData.blogBody}
+//                 onChange={(value) => handleInputChange("blogBody", value || "")}
+//                 preview="edit"
+//                 height={400}
+//                 data-color-mode="light"
+//                 visibleDragbar={false}
+//               />
+//             </div>
+
+//             {errors.body && (
+//               <p className="mt-1 text-sm text-destructive flex items-center">
+//                 <span className="mr-1">{icons.AlertCircle}</span>
+//                 {errors.body}
+//               </p>
+//             )}
+
+//             <div className="mt-2 text-sm text-muted-foreground">
+//               <p>
+//                 Use markdown syntax for formatting. The editor supports live
+//                 preview with split view.
+//               </p>
+//             </div>
+//           </div>
+
+//           {/* Submit Button */}
+//           <div className="flex items-center justify-end space-x-4 pt-6 border-t border-border">
+//             {errors.submit && (
+//               <p className="text-sm text-destructive flex items-center">
+//                 <span className="mr-1">{icons.AlertCircle}</span>
+//                 {errors.submit}
+//               </p>
+//             )}
+
+//             <button
+//               type="button"
+//               className="px-6 py-3 text-sm font-medium text-foreground bg-background border border-border rounded-lg hover:bg-accent transition-colors"
+//             >
+//               Save as Draft
+//             </button>
+
+//             <button
+//               onClick={handleSubmit}
+//               disabled={isSubmitting}
+//               className="inline-flex items-center px-6 py-3 text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 disabled:bg-primary/50 rounded-lg transition-colors disabled:cursor-not-allowed"
+//             >
+//               {isSubmitting ? (
+//                 <>
+//                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground mr-2"></div>
+//                   Publishing...
+//                 </>
+//               ) : (
+//                 <>
+//                   <span className="mr-2">{icons.Save}</span>
+//                   Publish Blog
+//                 </>
+//               )}
+//             </button>
+//           </div>
+//         </form>
+//       </div>
+//     </div>
+//   );
+// }
+
+
+
+
+
+// import { useState, useRef } from "react";
+// import MDEditor from "@uiw/react-md-editor";
+// import MarkdownPreview from "@uiw/react-markdown-preview";
+// import tags from "../utils/tags";
+// import { useDispatch, useSelector } from "react-redux";
+// import { useParams } from "react-router-dom";
+// import { useNavigate } from "react-router-dom";
+// import { createBlog, updateBlog, getAllBlogs } from "../features/blogSlicer";
+// import { selectCurrentBlog } from "../features/blogSlicer";
+// import { selectUser } from "../features/authSlicer";
+// import { useEffect } from "react";
+// import axios from "axios";
+
+// // Icons (fallback symbols instead of lucide-react)
+// const icons = {
+//   Save: "💾",
+//   Eye: "👁️",
+//   Image: "🖼️",
+//   Tag: "🏷️",
+//   X: "✕",
+//   Plus: "+",
+//   Check: "✓",
+//   AlertCircle: "⚠️",
+//   ArrowLeft: "←",
+// };
+
+// export default function CreateBlog() {
+//   const navigate = useNavigate();
+//   const dispatch = useDispatch();
+//   const user = useSelector(selectUser);
+//   const userId = user?._id;
+//   const [isEditing, setIsEditing] = useState(false);
+//   const [formData, setFormData] = useState({
+//     blogTitle: "",
+//     blogBody: "",
+//     tags: [],
+//     author: userId,
+//     _id: "",
+//   });
+
+//   useEffect(() => {
+//     async function getAllBlog() {
+//       await dispatch(getAllBlogs([]));
+//     }
+//     getAllBlog();
+//   }, [dispatch]);
+
+//   const { slug } = useParams();
+//   let currBlog = useSelector(selectCurrentBlog);
+
+//   const getBlogNow = async () => {
+//     try {
+//       console.log(slug);
+//       const response = await axios.get(
+//         `http://localhost:8000/api/blogs/slug/${slug}`,
+//         {
+//           withCredentials: true,
+//         }
+//       );
+//       return response.data.blog;
+//     } catch (error) {
+//       const msg = error?.response?.data?.msg;
+//       console.log(msg);
+//     }
+//   };
+
+//   useEffect(() => {
+//     const fetchAndPopulate = async () => {
+//       if (slug) {
+//         try {
+//           const response = await axios.get(
+//             `http://localhost:8000/api/blogs/slug/${slug}`,
+//             { withCredentials: true }
+//           );
+//           const blog = response.data.blog;
+//           currBlog = blog;
+//           console.log("Fetched blog", blog);
+
+//           setFormData({
+//             blogTitle: blog.title,
+//             blogBody: blog.body,
+//             tags: blog.tags,
+//             author: blog.author,
+//             _id: blog._id,
+//           });
+//           setIsEditing(true);
+//         } catch (error) {
+//           const msg = error?.response?.data?.msg || error.message;
+//           console.error("Failed to fetch blog:", msg);
+//         }
+//       }
+//     };
+//     fetchAndPopulate();
+//   }, [slug, currBlog]);
+
+//   const [file, setFile] = useState(null);
+//   const [tagInput, setTagInput] = useState("");
+//   const [showTagSuggestions, setShowTagSuggestions] = useState(false);
+//   const [errors, setErrors] = useState({});
+//   const [isSubmitting, setIsSubmitting] = useState(false);
+
+//   const tagInputRef = useRef(null);
+
+//   const filteredTags = tags?.filter(
+//     (tag) =>
+//       tag.toLowerCase().includes(tagInput.toLowerCase()) &&
+//       !formData?.tags?.includes(tag)
+//   );
+
+//   const handleInputChange = (field, value) => {
+//     setFormData((prev) => ({
+//       ...prev,
+//       [field]: value,
+//     }));
+
+//     if (errors[field]) {
+//       setErrors((prev) => {
+//         const updatedErrors = { ...prev };
+//         delete updatedErrors[field];
+//         return updatedErrors;
+//       });
+//     }
+//   };
+
+//   const addTag = (tag) => {
+//     if (tag && !formData.tags.includes(tag) && formData.tags.length < 5) {
+//       setFormData((prev) => ({
+//         ...prev,
+//         tags: [...prev.tags, tag],
+//       }));
+//       setTagInput("");
+//       setShowTagSuggestions(false);
+//     }
+//   };
+
+//   const removeTag = (tagToRemove) => {
+//     setFormData((prev) => ({
+//       ...prev,
+//       tags: prev.tags.filter((tag) => tag !== tagToRemove),
+//     }));
+//   };
+
+//   const handleTagInput = (e) => {
+//     const value = e.target.value;
+//     setTagInput(value);
+//     setShowTagSuggestions(value.length > 0);
+
+//     if (e.key === "Enter" || e.key === ",") {
+//       e.preventDefault();
+//       if (value.trim()) {
+//         addTag(value.trim());
+//       }
+//     }
+//   };
+
+//   const validateForm = () => {
+//     const newErrors = {};
+
+//     if (!formData.blogTitle.trim()) {
+//       newErrors.title = "Title is required";
+//     } else if (formData.blogTitle.length < 5) {
+//       newErrors.title = "Title must be at least 5 characters";
+//     }
+
+//     if (!formData.blogBody.trim()) {
+//       newErrors.body = "Blog content is required";
+//     }
+
+//     if (formData.tags.length === 0) {
+//       newErrors.tags = "At least one tag is required";
+//     }
+
+//     setErrors(newErrors);
+//     return Object.keys(newErrors).length === 0;
+//   };
+
+//   const handleSubmit = async (e) => {
+//     e.preventDefault();
+//     if (!validateForm()) return;
+
+//     setIsSubmitting(true);
+
+//     try {
+//       console.log(formData);
+//       const newFormData = new FormData();
+//       newFormData.append("blogTitle", formData.blogTitle);
+//       newFormData.append("blogBody", formData.blogBody);
+//       newFormData.append("author", formData.author);
+//       newFormData.append("tags", formData.tags.join(","));
+//       if (file) newFormData.append("image", file);
+
+//       if (isEditing) {
+//         newFormData.append("_id", formData._id);
+//         await dispatch(updateBlog(newFormData)).unwrap();
+//         setFormData({
+//           title: "",
+//           body: "",
+//           coverImage: "",
+//           tags: [],
+//           author: "",
+//           _id: "",
+//         });
+//         navigate(`/${userId}/my-blogs`);
+//       } else {
+//         await dispatch(createBlog(newFormData)).unwrap();
+//         navigate("/");
+//       }
+
+//       alert("Blog created successfully!");
+//     } catch (error) {
+//       console.error("Error creating blog:", error);
+//       setErrors({ submit: "Failed to create blog. Please try again." });
+//     } finally {
+//       setIsSubmitting(false);
+//     }
+//   };
+
+//   const titleCharCount = formData.blogTitle.length;
+//   const maxTitleLength = 100;
+
+//   return (
+//     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
+//       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+//         {/* Header */}
+//         <div className="flex items-center justify-between mb-8">
+//           <div className="flex items-center space-x-4">
+//             <button
+//               onClick={() => navigate(-1)}
+//               className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
+//             >
+//               <span className="text-lg text-gray-600 dark:text-gray-400">
+//                 {icons.ArrowLeft}
+//               </span>
+//             </button>
+//             <div>
+//               <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+//                 {isEditing ? "Edit Blog" : "Create New Blog"}
+//               </h1>
+//               <p className="text-gray-600 dark:text-gray-400">
+//                 Share your thoughts and ideas with the community
+//               </p>
+//             </div>
+//           </div>
+//         </div>
+
+//         {/* Form */}
+//         <form onSubmit={handleSubmit} className="space-y-6">
+//           {/* Title Input */}
+//           <div>
+//             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+//               Blog Title *
+//             </label>
+//             <div className="relative">
+//               <input
+//                 type="text"
+//                 value={formData.blogTitle}
+//                 onChange={(e) => handleInputChange("blogTitle", e.target.value)}
+//                 placeholder="Enter your blog title..."
+//                 maxLength={maxTitleLength}
+//                 className={`w-full px-4 py-3 rounded-lg border ${
+//                   errors.title
+//                     ? "border-red-300 dark:border-red-600 focus:border-red-500 dark:focus:border-red-400 focus:ring-red-500 dark:focus:ring-red-400"
+//                     : "border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-500 dark:focus:ring-blue-400"
+//                 } focus:outline-none focus:ring-2 focus:ring-opacity-50 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 transition-colors`}
+//               />
+//               <div className="absolute right-3 top-3 text-xs text-gray-500 dark:text-gray-400">
+//                 {titleCharCount}/{maxTitleLength}
+//               </div>
+//             </div>
+//             {errors.title && (
+//               <p className="mt-1 text-sm text-red-600 dark:text-red-400 flex items-center">
+//                 <span className="mr-1">{icons.AlertCircle}</span>
+//                 {errors.title}
+//               </p>
+//             )}
+//           </div>
+
+//           {/* Cover Image Input */}
+//           <div>
+//             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+//               Upload Cover Image
+//             </label>
+//             <div className="relative">
+//               <input
+//                 type="file"
+//                 accept="image/*"
+//                 onChange={(e) => setFile(e.target.files[0])}
+//                 className="w-full px-4 py-3 pl-10 rounded-lg border border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-500 dark:focus:ring-blue-400 focus:outline-none focus:ring-2 focus:ring-opacity-50 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 transition-colors file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-gray-50 dark:file:bg-gray-700 file:text-gray-700 dark:file:text-gray-300 hover:file:bg-gray-100 dark:hover:file:bg-gray-600"
+//               />
+//               <span className="absolute left-3 top-3.5 text-gray-500 dark:text-gray-400">
+//                 {icons.Image}
+//               </span>
+//             </div>
+//             {file && (
+//               <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+//                 Selected: {file.name}
+//               </div>
+//             )}
+//           </div>
+
+//           {/* Tags Input */}
+//           <div>
+//             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+//               Tags * (Max 5)
+//             </label>
+
+//             {/* Selected Tags */}
+//             {formData.tags.length > 0 && (
+//               <div className="flex flex-wrap gap-2 mb-3">
+//                 {formData.tags.map((tag) => (
+//                   <span
+//                     key={tag}
+//                     className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200"
+//                   >
+//                     {tag}
+//                     <button
+//                       type="button"
+//                       onClick={() => removeTag(tag)}
+//                       className="ml-2 h-4 w-4 rounded-full hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors flex items-center justify-center"
+//                     >
+//                       <span className="text-xs">{icons.X}</span>
+//                     </button>
+//                   </span>
+//                 ))}
+//               </div>
+//             )}
+
+//             {/* Tag Input */}
+//             <div className="relative z-40">
+//               <input
+//                 ref={tagInputRef}
+//                 type="text"
+//                 value={tagInput}
+//                 onChange={(e) => setTagInput(e.target.value)}
+//                 onKeyDown={handleTagInput}
+//                 onFocus={() => setShowTagSuggestions(tagInput.length > 0)}
+//                 onBlur={() =>
+//                   setTimeout(() => setShowTagSuggestions(false), 200)
+//                 }
+//                 placeholder="Type to search tags or add custom tags..."
+//                 disabled={formData.tags.length >= 5}
+//                 className={`w-full px-4 py-3 pl-10 rounded-lg border ${
+//                   errors.tags
+//                     ? "border-red-300 dark:border-red-600 focus:border-red-500 dark:focus:border-red-400 focus:ring-red-500 dark:focus:ring-red-400"
+//                     : "border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-500 dark:focus:ring-blue-400"
+//                 } focus:outline-none focus:ring-2 focus:ring-opacity-50 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed transition-colors`}
+//               />
+//               <span className="absolute left-3 top-3.5 text-gray-500 dark:text-gray-400">
+//                 {icons.Tag}
+//               </span>
+
+//               {/* Tag Suggestions */}
+//               {showTagSuggestions && filteredTags.length > 0 && (
+//                 <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+//                   {filteredTags.slice(0, 10).map((tag) => (
+//                     <button
+//                       key={tag}
+//                       type="button"
+//                       onClick={() => addTag(tag)}
+//                       className="w-full px-4 py-2 text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center justify-between"
+//                     >
+//                       <span className="text-gray-900 dark:text-white">
+//                         {tag}
+//                       </span>
+//                       <span className="text-gray-500 dark:text-gray-400">
+//                         {icons.Plus}
+//                       </span>
+//                     </button>
+//                   ))}
+//                 </div>
+//               )}
+//             </div>
+
+//             {errors.tags && (
+//               <p className="mt-1 text-sm text-red-600 dark:text-red-400 flex items-center">
+//                 <span className="mr-1">{icons.AlertCircle}</span>
+//                 {errors.tags}
+//               </p>
+//             )}
+
+//             <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+//               Press Enter or comma to add tags. Choose from suggested tags or
+//               create custom ones.
+//             </p>
+//           </div>
+
+//           {/* Content Editor */}
+//           <div>
+//             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+//               Blog Content *
+//             </label>
+
+//             <div
+//               className="rounded-lg overflow-hidden border border-gray-300 dark:border-gray-600"
+//               data-color-mode="auto"
+//             >
+//               <MDEditor
+//                 value={formData.blogBody}
+//                 onChange={(value) => handleInputChange("blogBody", value || "")}
+//                 preview="edit"
+//                 height={400}
+//                 data-color-mode="auto"
+//                 visibleDragbar={false}
+//                 textareaProps={{
+//                   className:
+//                     "bg-white dark:bg-gray-800 text-gray-900 dark:text-white",
+//                   style: {
+//                     backgroundColor: "inherit",
+//                     color: "inherit",
+//                   },
+//                 }}
+//               />
+//             </div>
+
+//             {errors.body && (
+//               <p className="mt-1 text-sm text-red-600 dark:text-red-400 flex items-center">
+//                 <span className="mr-1">{icons.AlertCircle}</span>
+//                 {errors.body}
+//               </p>
+//             )}
+
+//             <div className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+//               <p>
+//                 Use markdown syntax for formatting. The editor supports live
+//                 preview with split view.
+//               </p>
+//             </div>
+//           </div>
+
+//           {/* Submit Button */}
+//           <div className="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200 dark:border-gray-700">
+//             {errors.submit && (
+//               <p className="text-sm text-red-600 dark:text-red-400 flex items-center">
+//                 <span className="mr-1">{icons.AlertCircle}</span>
+//                 {errors.submit}
+//               </p>
+//             )}
+
+//             <button
+//               type="button"
+//               className="px-6 py-3 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+//             >
+//               Save as Draft
+//             </button>
+
+//             <button
+//               type="submit"
+//               disabled={isSubmitting}
+//               className="inline-flex items-center px-6 py-3 text-sm font-medium text-white bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 disabled:bg-blue-400 dark:disabled:bg-blue-600 disabled:opacity-50 rounded-lg transition-colors disabled:cursor-not-allowed"
+//             >
+//               {isSubmitting ? (
+//                 <>
+//                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+//                   {isEditing ? "Updating..." : "Publishing..."}
+//                 </>
+//               ) : (
+//                 <>
+//                   <span className="mr-2">{icons.Save}</span>
+//                   {isEditing ? "Update Blog" : "Publish Blog"}
+//                 </>
+//               )}
+//             </button>
+//           </div>
+//         </form>
+//       </div>
+//     </div>
+//   );
+// }
+
+
+
+
 import { useState, useRef } from "react";
 import MDEditor from "@uiw/react-md-editor";
 import MarkdownPreview from "@uiw/react-markdown-preview";
@@ -698,17 +1690,11 @@ export default function CreateBlog() {
             </button>
             <div>
               <h1 className="text-2xl font-bold text-foreground">
-                Create New Blog
+                {isEditing ? "Edit Blog" : "Create New Blog"}
               </h1>
               <p className="text-muted-foreground">
                 Share your thoughts and ideas with the community
               </p>
-              <div>
-                <MarkdownPreview
-                  source={formData.blogBody}
-                  style={{ background: "white", color: "black" }}
-                />
-              </div>
             </div>
           </div>
         </div>
@@ -779,7 +1765,7 @@ export default function CreateBlog() {
           </div> */}
           <div>
             <label className="block text-sm font-medium text-foreground mb-2">
-              Upload Cover Image URL
+              Upload Cover Image
             </label>
             <div className="relative">
               <input
