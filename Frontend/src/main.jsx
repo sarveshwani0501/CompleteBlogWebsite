@@ -178,41 +178,35 @@ const router = createBrowserRouter(
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <Provider store={store}>
-      <AppContent /> {/* Use a wrapper component to manage the theme state */}
+      <AppContent /> 
     </Provider>
   </StrictMode>
 );
 
-// New component to encapsulate theme logic and render the main app
 function AppContent() {
   const [currentToastTheme, setCurrentToastTheme] = useState(() => {
-    // Initialize theme from localStorage on initial render
     return localStorage.getItem("theme") || "light";
   });
 
   useEffect(() => {
-    // Listen for changes to localStorage 'app-theme'
     const handleStorageChange = () => {
       setCurrentToastTheme(localStorage.getItem("theme") || "light");
     };
 
     window.addEventListener("storage", handleStorageChange);
 
-    // Initial sync with documentElement for CSS
     document.documentElement.setAttribute("theme", currentToastTheme);
 
-    // Cleanup listener on component unmount
     return () => {
       window.removeEventListener("storage", handleStorageChange);
     };
-  }, [currentToastTheme]); // Re-run effect if currentToastTheme changes (e.g., initially)
+  }, [currentToastTheme]);
 
   return (
     <>
       <AppInitializer>
         <RouterProvider router={router} />
       </AppInitializer>
-      {/* ToastContainer with dynamic theme */}
       <ToastContainer
         position="top-right"
         autoClose={3000}
@@ -223,7 +217,7 @@ function AppContent() {
         pauseOnFocusLoss
         draggable
         pauseOnHover
-        theme={currentToastTheme} // Pass the dynamic theme here
+        theme={currentToastTheme}
       />
     </>
   );

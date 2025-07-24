@@ -16,10 +16,10 @@ const uploadToCloudinary = async (localFilePath, folder = "uploads") => {
     });
     //console.log(result);
     if (fs.existsSync(localFilePath)) {
-      console.log("34");
+      //console.log("34");
       fs.unlinkSync(localFilePath);
     }
-    console.log("done");
+    //console.log("done");
     return result;
   } catch (error) {
     //console.log(5);

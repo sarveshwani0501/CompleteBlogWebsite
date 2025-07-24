@@ -6,8 +6,6 @@ import { setUser } from "./features/authSlicer";
 const AppInitializer = ({ children }) => {
   const dispatch = useDispatch();
 
-  
-
   useEffect(() => {
     const checkAuth = async () => {
       try {
